@@ -308,6 +308,8 @@ SetTitleMatchMode, 1
         Return
     }
     +^#BS::SendInput, git reset HEAD^ && git push origin +HEAD ; delete most recent commit and push it to remote
+    ::git overweight::git ls-tree -r -t -l --full-name HEAD | sort -n -k 4 ; find the largest blobs in repo causing it to swell up https://stackoverflow.com/a/1290046/7361019
+    ::git lg::git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)' --all
 }
 #IfWinActive
 
