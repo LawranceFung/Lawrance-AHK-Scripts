@@ -283,6 +283,12 @@ SetTitleMatchMode, 1
         SendInput, git checkout master && git merge --squash %myBranchName% -m ""{left 1} 
         Return
     }
+    ^!8:: ; merge changes into master without squashing
+    {
+        myBranchName := HiddenCommand("git branch --show current")        
+        SendInput, git checkout master && git merge %myBranchName% && git push
+        Return
+    }
     ^!c::clipboard := HiddenCommand("git rev-parse HEAD") ; copy commit stamp    
     ^!n:: ; WARNING!!!  merge --allow-unrelated-histories creates a new history which increases the size of your git repo
     ; create a new domain branch from master with a blank commit history ; todo consolidate these 2 into 1 command palette with a tooltip
