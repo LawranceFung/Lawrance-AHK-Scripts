@@ -6,15 +6,15 @@
 SetTitleMatchMode, 2
 #If WinActive("ahk_class CabinetWClass") || WinActive("ahk_class ExploreWClass") || WinActive("ahk_class Progman") || WinActive("ahk_class WorkerW")
 {
-	; Open terminal in current directory of a windows explorer folder
+    ; Open terminal in current directory of a windows explorer folder
     !t::OpenCmdInCurrent()
     ; Open git bash in current directory of a windows explorer folder
-    ^t::OpenGBInCurrent() ; @todo get this to work in
+    ;^t::OpenGBInCurrent() ; @todo get this to work in
     ; @todo open VS15 bash in current directory of a windows explorer folder
     +^t::OpenVSDCPInCurrent()
     ; @todo add powershell
     +!t::OpenPSinCurrent()
-	; F12::OpenCmdInCurrent()
+    ; F12::OpenCmdInCurrent()
     F12::OpenWTinCurrent()
     F8::OpenWTinCurrent() ; while F12 on W530 isn't working
 }
@@ -22,7 +22,7 @@ SetTitleMatchMode, 2
 
 OpenCmdInCurrent()
 {
-	; This is required to get the full path of the file from the address bar
+    ; This is required to get the full path of the file from the address bar
     WinGetText, full_path, A
 
     ; Split on newline (`n)
@@ -246,6 +246,31 @@ SetTitleMatchMode, 1
 ; #IfWinActive, MINGW64:
 #If (WinActive("ahk_exe WindowsTerminal.exe") && WinActive("MSYS:/")) || WinActive("MINGW64") ; #todo migrate to Windows Terminal JSON settings?  https://docs.microsoft.com/en-us/windows/terminal/customize-settings/actions
 {
+    ; Helper functions
+    UpstreamBranch()
+    {
+        defaultRemoteBranch := HiddenCommand("git rev-parse --abbrev-ref --symbolic-full-name @{u}") ; get upstream for current branch
+        StringGetPos, slashPos, defaultRemoteBranch, /
+        return SubStr(defaultRemoteBranch, slashPos+2)
+    }
+    DefaultBranch() ; get default branch for remote for upstream for current branch
+    {
+        defaultRemoteBranch := HiddenCommand("git symbolic-ref refs/remotes/origin/HEAD --short") ; get upstream for current branch
+        StringGetPos, slashPos, defaultRemoteBranch, /
+        return SubStr(defaultRemoteBranch, slashPos+2)
+    }
+
+    ;encapsulated in function in case git cli changes
+    ActiveBranch()
+    {
+        return HiddenCommand("git branch --show current")
+    }
+    MostRecentCommit()
+    {
+        return HiddenCommand("git rev-parse HEAD")
+    }
+
+
     ; #todo call git rev-parse --abbrev-ref origin/HEAD to get the name of the default branch, which isn't necessarily master
     F1:: ; abort merge and set HEAD to latest commit on default branch of remote
     {
@@ -253,7 +278,7 @@ SetTitleMatchMode, 1
         SendInput, git merge --abort & git rebase --abort & git fetch --force && git reset --hard %defaultBranchName%
         Return
     }
-    F2::SendInput, git commit --amend && git pull && git push
+    ; F2::SendInput, git commit --amend && git pull && git push
     +F2::SendInput, git rebase -i HEAD~ && git push --force{left 20}
     F3::SendInput, grep -r '' | grep -r '\.cpp:\|\.h:' | sed 's/:.*$//p' | sort | uniq{left 58} ; '-i' to grep ignores case
     +F3::SendInput, find . -type f -exec sed -i ':a;N;$!ba;s///g' {{}{}} {+}{left 9} ; find and replace
@@ -264,32 +289,106 @@ SetTitleMatchMode, 1
     ^F5::SendInput, git submodule deinit -f . && git submodule update --init --recursive ; reset submodules
     +^F5::SendInput, git reflog expire --all --expire=now && git gc --prune=now --aggressive ; clean the reflog
     +!^F5::SendInput, git ls-files -ci --exclude-standard && git ls-files -ci --exclude-standard -z | xargs -0 git rm --cached ; apply .gitignore retroactively
+    !^F5::SendInput, git submodule update --remote ; update submodules
     F6::SendInput, start .{Enter}
-    F8::SendInput, git add . && git commit -m "" && git push{left 13}
-    +F8::SendInput, git add . && git commit -m ""{left 1}
+    +F8::SendInput, git add . && git commit -m "" && git push{left 13}
+    F8::SendInput, git add . && git commit -m ""{left 1}
     +^F8:: ; stamp commit with branch name, in case project management requires name of branch in commit to push
     {
-        myBranchName := HiddenCommand("git branch --show current")
+        myBranchName := HiddenCommand("git branch --show-current")
         SendInput, git add . && git commit -m "%myBranchName% " && git push{left 13}
         Return
     }
     +F9::SendInput, git checkout release && git merge -no-ff --squash master ; squash and summarize changes from master for next release ; #todo is this correct????
     +^F9::SendInput, git fetch upstream && git rebase upstream/master ; merge changes from an upstream repo
-    ^!7:: ; squash current branch's changes into master ; mnemonic 7 comes from 7-zip
+
+    +F11::SendInput, git diff  -- . `'`:{!}boost`'{left 15} ; diff excluding submodules
+    ^!7:: ; merge active branch into main ; mnemonic 7 comes from 7-zip ; assumes default branch on remote for active branch is the default branch for project (e.g. 1 forge for development; others would be mirrors)
     {
-        myBranchName := HiddenCommand("git branch --show current")
-        StringLen, myBranchNameLength, myBranchName
-        ; backLeft = 1 + myBranchNameLength ; double ampersand doesn't assume mergetool needs to be called
-        SendInput, git checkout master && git merge --squash %myBranchName% -m ""{left 1} 
+        sequenceTooltip("S&quash`nNull: Merge commit")
+        Input Key, L1T1
+        switch Key
+        {
+            case "q":
+                squash=1
+            default:
+        }
+
+        defaultBranch := DefaultBranch()
+        activeBranch := ActiveBranch()
+        SendInput, git checkout %defaultBranch% && git merge 
+        if (squash)
+        {
+            SendInput, {SPACE}--squash %activeBranch% && git commit -m "merge squash %activeBranch%"
+        }
+        else
+        {
+            SendInput, {SPACE}--no-ff %activeBranch%
+        }
+        SendInput, {SPACE}&& git push{left 13}
+        
+        Return
+    }
+    +!7:: ; create and --autosquash commit into most recent commit
+    {   ; give user option to add commit message
+        sequenceTooltip("Add &commit message`n&specify commit to squash into`nSpecify commit &2 squash new commit with message into")   
+        Input Key, L1T1
+        switch Key
+        {
+            case "c":
+                cm=1
+            case "s":
+                sc=1
+            case "2":
+                cm=1
+                sc=1
+            default:
+        }
+        
+        SendInput, git add . && git commit --fixup
+        if (sc == 1)
+        {
+            SendInput, {SPACE}HaSh
+        }
+        else
+        {
+            HiddenCommand("git config --global rebase.autosquash true") ; ensure autosquash enabled
+            mostRecentCommit := MostRecentCommit()
+            SendInput, {SPACE}%mostRecentCommit%
+        }
+        
+        ; #todo — how would I suppress the editor?
+        if (cm == 1)
+        {
+            SendInput, {SPACE}-m "" && git rebase -i --autosquash{left 31}
+        }
+        else
+        {
+            SendInput, {SPACE}&& git rebase -i --autosquash{left 30}
+        }
         Return
     }
     ^!8:: ; merge changes into master without squashing
     {
-        myBranchName := HiddenCommand("git branch --show current")        
-        SendInput, git checkout master && git merge %myBranchName% && git push
+        defaultBranch := DefaultBranch()
+        activeBranch := ActiveBranch()
+        SendInput, git checkout master && git merge %activeBranch% && git push        
         Return
     }
-    ^!c::clipboard := HiddenCommand("git rev-parse HEAD") ; copy commit stamp    
+    ; #todo — initialize a repository by cherry-picking the gitignore from github
+    ; git rebase since a certain commit (in the clipboard) ; this sounds redundant.  Is there already a git command for this? yes, it's "git rebase -i <last commit to not rebase>"
+    ; ^!t::
+    ; {        
+    ;     commitsSinceIncluding := HiddenCommandComplete("git rev-list " clipboard "^^..HEAD") ; in cmd ^^ escapes to ^
+    ;     ; StringReplace, var, var, `n, `n, UseErrorLevel
+    ;     ; if SubStr(var, 0) != "`n"
+    ;     ;     ErrorLevel++ 
+    ;     ; MsgBox % var
+    ;     count := StrSplit(commitsSinceIncluding, "`n").maxindex() - 1 ; subtract one for ending newline
+    ;     SendInput, git rebase -i HEAD~%count%
+    ;     Return
+    ; }
+    ^!c::clipboard := MostRecentCommit()
     ^!n:: ; WARNING!!!  merge --allow-unrelated-histories creates a new history which increases the size of your git repo
     ; create a new domain branch from master with a blank commit history ; todo consolidate these 2 into 1 command palette with a tooltip
     {
@@ -315,7 +414,20 @@ SetTitleMatchMode, 1
     }
     +^#BS::SendInput, git reset HEAD^ && git push origin +HEAD ; delete most recent commit and push it to remote
     ::git overweight::git ls-tree -r -t -l --full-name HEAD | sort -n -k 4 ; find the largest blobs in repo causing it to swell up https://stackoverflow.com/a/1290046/7361019
+    ::git logbook::git log --date-order --date=iso --graph --full-history --all --pretty=format:'%x08%x09%C(red)%h %C(cyan)%ad%x08%x08%x08%x08%x08%x08%x08%x08%x08%x08%x08%x08%x08%x08%x08 %C(bold blue)%aN%C(reset)%C(bold yellow)%d %C(reset)%s' ; commits lbl like bitbucket
+    ::git loggraph::git log --date-order --graph --all --date=short --pretty=format:"%x09%C(auto)%h  %C(cyan)%ad  %C(green)%<(12,trunc)%aN    %C(reset)%<(50,trunc)%s    %C(auto)%d" ; commits lbl but with branch graph
     ::git lg::git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)' --all
+    #If WinActive("/Cantokeys")
+    ^!9:: ; 
+    {
+        defaultRemoteBranch := HiddenCommand("git rev-parse --abbrev-ref origin/HEAD") ; assumes "origin" as the default remote
+        StringGetPos, slashPos, defaultRemoteBranch, /        
+        defaultBranch := SubStr(defaultRemoteBranch, slashPos+2)
+        ; #todo get vsn no from file
+        SendInput, git checkout %defaultBranch% && git pull && git checkout release && git merge %defaultBranch% && git commit -m "%vsn%" && git push
+        Return
+    }
+    #IfWinActive
 }
 #IfWinActive
 
@@ -335,6 +447,8 @@ SetTitleMatchMode, 1
             case "c":
                 SendInput, choco upgrade -y all ; isn't this redundant due to choco install choco-upgrade-all-at-startup ?
                 ; #todo - delete all .lnk files on desktop
+                ; choco export "'C:\Users\Lawrance\OneDrive\Backup\packages.config'"
+                ; choco upgrade -y C:\Users\Lawrance\OneDrive\Backup\packages.config
                 return
             case "p":
                 SendInput, pip freeze | `%{U+007B}$_.split(`'==`')[0]{U+007D} | `%{U+007B}pip install --upgrade $_ pip{U+007D}
