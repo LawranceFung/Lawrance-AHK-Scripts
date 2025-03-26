@@ -147,27 +147,7 @@ OpenWTinCurrent() ; #todo implement shift+key to open in new window, or ctrl+key
     sequenceTooltip("&Git Bash`nPower&Shell`n&Ubuntu`n&VS Dev Cmd Prompt 19")
     Input Key, L1T.4 ; since L1 specifies a total of 1 followup stroke, we don't need to handle ESC as a sequence break
 
-    ; This is required to get the full path of the file from the address bar
-    WinGetText, full_path, A
-
-    ; Split on newline (`n)
-    StringSplit, word_array, full_path, `n
-
-    ; Find and take the element from the array that contains address
-    Loop, %word_array0%
-    {
-        IfInString, word_array%A_Index%, Address
-        {
-            full_path := word_array%A_Index%
-            break
-        }
-    }
-
-    ; strip to bare address
-    full_path := RegExReplace(full_path, "^Address: ", "")
-
-    ; Just in case - remove all carriage returns (`r)
-    StringReplace, full_path, full_path, `r, , all
+    full_path := GetActiveExplorerPath()
 
     switch Key ; switch profile based on user input
     {
@@ -206,6 +186,23 @@ OpenWTinCurrent() ; #todo implement shift+key to open in new window, or ctrl+key
         Run, wt.exe -d "%full_path%" -p "%selectedProfile%"
 
     Return
+}
+
+GetActiveExplorerPath()
+{
+    explorerHwnd := WinActive("ahk_class CabinetWClass")
+    if (explorerHwnd)
+    {
+        for window in ComObjCreate("Shell.Application").Windows
+        {
+            if (window.hwnd==explorerHwnd)
+            {
+                return window.Document.Folder.Self.Path
+                ; #todo assumes first, leftmost tab not active tab
+                ; known resolution in AHK v2: GetCurrentExplorerPath(hwnd := WinExist("A")) in https://www.autohotkey.com/boards/viewtopic.php?p=593212#p593212
+            }
+        }
+    }
 }
 
 ShellRunBasic(prms*) ; launch terminal as not admin
@@ -299,7 +296,7 @@ SetTitleMatchMode, 1
         SendInput, git add . && git commit -m "%myBranchName% " && git push{left 13}
         Return
     }
-    +F9::SendInput, git checkout release && git merge -no-ff --squash master ; squash and summarize changes from master for next release ; #todo is this correct????
+    +F9::SendInput, git checkout release && git merge --squash master && git commit -m ""{left}
     +^F9::SendInput, git fetch upstream && git rebase upstream/master ; merge changes from an upstream repo
 
     +F11::SendInput, git diff  -- . `'`:{!}boost`'{left 15} ; diff excluding submodules
