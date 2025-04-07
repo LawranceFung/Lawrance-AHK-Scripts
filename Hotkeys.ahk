@@ -1,15 +1,8 @@
-; AutoHotkey Version: 1.x
-; Language:       English
-; Platform:       Win9x/NT
-; Author:         A.N.Other <myemail@nowhere.com>
-;
-; Script Function:
-;	Template script (you can customize this template by editing "ShellNew\Template.ahk" in your Windows folder)
-;
+#Requires AutoHotkey v2.0
 
-#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+#SingleInstance force ; yes to singleinstance
+SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
+SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
 
 #Include, %A_ScriptDir%\ExplorerShowHidden.ahk
 #Include, %A_ScriptDir%\HideTaskbar.ahk
@@ -18,4 +11,10 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Include, %A_ScriptDir%\TerminalFromExplorer.ahk ; contextual shortcuts for opening CMD, PowerShell, Git Bash, etc
 #Include, %A_ScriptDir%\Navigation.ahk
 
-#F5::Reload
+; Reload
+; #^r::Reload
+F17::Reload()
+#F5::Reload()
++#F5::Suspend(-1)
+; refresh the ip address
++#F10::Run(A_ComSpec " /c `"ipconfig /release && ipconfig /renew`"", , "Hide")
