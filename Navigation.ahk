@@ -14,6 +14,16 @@
 	Return
 }
 
++^#F11::
+{
+    Title := WinGetTitle("A")
+    WinGetPos(&X, &Y, &W, &H, Title)
+    MsgBox(W ", " H)
+    return
+}
+
+; #todo switch statement to right-size window depending on which app it is
+
 ; full screen across multiple monitors
 #F11::
 {
