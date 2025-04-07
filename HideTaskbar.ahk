@@ -1,22 +1,24 @@
+#Requires Autohotkey v2.0
+
 ; Windows TaskBar
 !#Space:: ; this seems to have been deprecated by recent versions of ahk
-	VarSetCapacity(APPBARDATA, A_PtrSize=4 ? 36:48)
-	NumPut(DllCall("Shell32\SHAppBarMessage", "UInt", 4 ; ABM_GETSTATE
-                                           , "Ptr", &APPBARDATA
-                                           , "Int")
-	? 2:1, APPBARDATA, A_PtrSize=4 ? 32:40) ; 2 - ABS_ALWAYSONTOP, 1 - ABS_AUTOHIDE
-	, DllCall("Shell32\SHAppBarMessage", "UInt", 10 ; ABM_SETSTATE
-                                    , "Ptr", &APPBARDATA)
-	KeyWait, % A_ThisHotkey
+{
+	static ABM_SETSTATE := 0xA, ABS_AUTOHIDE := 0x1, ABS_ALWAYSONTOP := 0x2
+    static hide := 0
+    hide := !hide
+    APPBARDATA := Buffer(size := 2*A_PtrSize + 2*4 + 16 + A_PtrSize, 0)
+    NumPut("UInt", size, APPBARDATA), NumPut("Ptr", WinExist("ahk_class Shell_TrayWnd"), APPBARDATA, A_PtrSize)
+    NumPut("UInt", hide ? ABS_AUTOHIDE : ABS_ALWAYSONTOP, APPBARDATA, size - A_PtrSize)
+    DllCall("Shell32\SHAppBarMessage", "UInt", ABM_SETSTATE, "Ptr", APPBARDATA)
 	Return
+}
 ^!#Space:: ; completely hide taskbar to lock down strangers borrowing my computer
-	WinExist("ahk_class Shell_TrayWnd")
-	t := !t
-	If (t = "1") {
-		WinHide, ahk_class Shell_TrayWnd
-		WinHide, Start ahk_class Button
+{
+	If (WinExist("ahk_class Shell_TrayWnd"))
+	{
+		WinHide("ahk_class Shell_TrayWnd")
 	} Else {
-		WinShow, ahk_class Shell_TrayWnd
-		WinShow, Start ahk_class Button
+		WinShow("ahk_class Shell_TrayWnd")
 	}
 	Return
+}
