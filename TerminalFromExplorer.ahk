@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.0
 
 ; Open terminal in current directory of a windows explorer folder
-#Include "%A_ScriptDir%\Utilities2.ahk"
+#Include "%A_ScriptDir%\Utilities.ahk"
 #Include "%A_ScriptDir%\CurrentWindow.ahk"
 ; SetTitleMatchMode, RegEx
 ; #todo once this is fully working on Windows 10, should be able to delete commands other than F12⇨Windows Terminal
