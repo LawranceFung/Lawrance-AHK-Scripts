@@ -7,6 +7,22 @@
 ; for name in VirtualDesktops.GetVirtualDesktopNames()
 ;     MsgBox name
 
+; Toggle primary monitor
++#m::
+{
+    curMon := Integer(Trim(FileRead(A_MyDocuments . "\ahk-current-mon.txt")))
+    ; add 1 because nircmd numbers monitors 1-indexed but modular arithmetic is always 0-indexed
+    Run("nircmd.exe setprimarydisplay " . curMon + 1)
+    
+    ; rollover to next num monitor
+    curMon++
+    curMon := Mod(curMon, 2)
+
+    numMon := FileOpen(A_MyDocuments . "\ahk-current-mon.txt", "w")
+	numMon.Write(curMon)
+    numMon.Close()
+}
+
 class VirtualDesktops
 {
     static CLSID_ImmersiveShell                := '{C2F03A33-21F5-47FA-B4BB-156362A2F239}'
