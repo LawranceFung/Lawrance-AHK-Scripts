@@ -16,7 +16,7 @@
     
     ; rollover to next num monitor
     curMon++
-    curMon := Mod(curMon, 2)
+    curMon := Mod(curMon, GetNumberOfPhysicalMonitors())
 
     numMon := FileOpen(A_MyDocuments . "\ahk-current-mon.txt", "w")
 	numMon.Write(curMon)

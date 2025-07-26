@@ -94,3 +94,16 @@ DelFile(f)
     }
     else return false
 }
+
+GetNumberOfPhysicalMonitors() {
+    static each(hMon, _2, _3, pCount) {
+        if DllCall("dxva2\GetNumberOfPhysicalMonitorsFromHMONITOR"
+            , "ptr", hMon, "uint*", &nPhysMon:=0)
+            %ObjFromPtrAddRef(pCount)% += nPhysMon
+        return true
+    }
+    static cb := CallbackCreate(each, "F")
+    count := 0
+    DllCall("EnumDisplayMonitors", "ptr", 0, "ptr", 0, "ptr", cb, "ptr", ObjPtr(&count))
+    return count
+}
