@@ -10,7 +10,15 @@
 ; Toggle primary monitor
 +#m::
 {
-    curMon := Integer(Trim(FileRead(A_MyDocuments . "\ahk-current-mon.txt")))
+    recordPrimaryMon := A_MyDocuments . "\ahk-current-mon.txt"
+    ; mistakenly assume if no record that monitor=1 is active
+    If !FileExist(recordPrimaryMon)
+    {
+        temp := FileOpen(recordPrimaryMon, "w")
+        temp.Write(1)
+        temp.Close()
+    }
+    curMon := Integer(Trim(FileRead(recordPrimaryMon)))
     ; add 1 because nircmd numbers monitors 1-indexed but modular arithmetic is always 0-indexed
     Run("nircmd.exe setprimarydisplay " . curMon + 1)
     
@@ -18,7 +26,7 @@
     curMon++
     curMon := Mod(curMon, GetNumberOfPhysicalMonitors())
 
-    numMon := FileOpen(A_MyDocuments . "\ahk-current-mon.txt", "w")
+    numMon := FileOpen(recordPrimaryMon, "w")
 	numMon.Write(curMon)
     numMon.Close()
 }
