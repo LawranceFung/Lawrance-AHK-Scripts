@@ -296,8 +296,8 @@ SetTitleMatchMode(1)
     !^F5::    SendInput("git submodule update --remote") ; update submodules
     F6::    SendInput("start .{Enter}")
     +F8::    SendInput("git add . && git commit -m `"`" && git push{left 13}")
-    F8::    SendInput("git add . && git commit -m `"`"{left 1}")
-    +^F8:: ; stamp commit with branch name, in case project management requires name of branch in commit to push
+    +^F8::    SendInput("git add . && git commit -m `"`"{left 1}")
+    F8:: ; stamp commit with branch name, in case project management requires name of branch in commit to push
     {
         myBranchName := HiddenCommand("git branch --show-current")
         SendInput("git add . && git commit -m `"" myBranchName " `" && git push{left 13}")
