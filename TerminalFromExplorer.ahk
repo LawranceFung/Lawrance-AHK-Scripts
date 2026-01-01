@@ -300,7 +300,7 @@ SetTitleMatchMode(1)
     F8:: ; stamp commit with branch name, in case project management requires name of branch in commit to push
     {
         myBranchName := HiddenCommand("git branch --show-current")
-        SendInput("git add . && git commit -m `"" myBranchName " `" && git push{left 13}")
+        SendInput("git add . && git commit -m `"" myBranchName " `"{left 1}")
         Return
     }
     +F9::    SendInput("git checkout release && git merge --squash master && git commit -m `"`"{left}")
