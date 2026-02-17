@@ -307,7 +307,7 @@ SetTitleMatchMode(1)
     +^F9::    SendInput("git fetch upstream && git rebase upstream/master") ; merge changes from an upstream repo
 
     +F11::    SendInput("git diff  -- . `'`:{!}boost`'{left 15}") ; diff excluding submodules
-    ^!7:: ; merge active branch into main ; mnemonic 7 comes from 7-zip ; assumes default branch on remote for active branch is the default branch for project (e.g. 1 forge for development; others would be mirrors)
+    +^!7:: ; merge active branch into main ; mnemonic 7 comes from 7-zip ; assumes default branch on remote for active branch is the default branch for project (e.g. 1 forge for development; others would be mirrors)
     {
         sequenceTooltip("S&quash`nNull: Merge commit")
         ihKey := InputHook("L1T1"), ihKey.Start(), ErrorLevel := ihKey.Wait(), Key := ihKey.Input
@@ -373,7 +373,7 @@ SetTitleMatchMode(1)
         }
         Return
     }
-    ^!8:: ; merge changes into master without squashing
+    +^!8:: ; merge changes into master without squashing
     {
         SendInput("git checkout master && git merge " ActiveBranch() " && git push")
         Return
@@ -421,7 +421,7 @@ SetTitleMatchMode(1)
     ::git loggraph::git log --date-order --graph --all --date=short --pretty=format:"%x09%C(auto)%h  %C(cyan)%ad  %C(green)%<(12,trunc)%aN    %C(reset)%<(50,trunc)%s    %C(auto)%d" ; commits lbl but with branch graph
     ::git lg::git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) %C(bold cyan)(committed: %cD)%C(reset) %C(auto)%d%C(reset)%n''          %C(white)%s%C(reset)%n''          %C(dim white)- %an <%ae> %C(reset) %C(dim white)(committer: %cn <%ce>)%C(reset)' --all
     #HotIf WinActive("/Cantokeys")
-    ^!9:: ; 
+    +^!9:: ; 
     {
         defaultRemoteBranch := HiddenCommand("git rev-parse --abbrev-ref origin/HEAD") ; assumes "origin" as the default remote
         slashPos := InStr(defaultRemoteBranch, "/") - 1
