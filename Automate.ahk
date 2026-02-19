@@ -18,3 +18,8 @@ SleepRandAtMost(max)
     sleepDuration := Random(0, max)
     Sleep sleepDuration
 }
+SleepRandBetween(min, max)
+{
+    sleepDuration := Random(min, max)
+    Sleep sleepDuration
+}
